@@ -1,0 +1,27 @@
+git@github.com:PetrKosvanec/NetLogo_ArtikulaceBloky.git
+
+petr@petrs:/opt/NetLogo-6.2.2-64/app/models/Odevzdam$ git push -u origin master
+Username for 'https://github.com': PetrKosvanec
+Password for 'https://PetrKosvanec@github.com': 
+remote: Support for password authentication was removed on August 13, 2021.
+remote: Please see https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls for information on currently recommended modes of authentication.
+fatal: Authentication failed for 'https://github.com/PetrKosvanec/NetLogo_ArtikulaceBloky.git/'
+petr@petrs:/opt/NetLogo-6.2.2-64/app/models/Odevzdam$ git remote set-url origin git@github.com:PetrKosvanec/NetLogo_ArtikulaceBloky.git
+petr@petrs:/opt/NetLogo-6.2.2-64/app/models/Odevzdam$ git push -u origin master
+Enter passphrase for key '/home/petr/.ssh/id_ed25519': 
+Enumerating objects: 4, done.
+Counting objects: 100% (4/4), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 4.44 KiB | 1.11 MiB/s, done.
+Total 4 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: 
+remote: Create a pull request for 'master' on GitHub by visiting:
+remote:      https://github.com/PetrKosvanec/NetLogo_ArtikulaceBloky/pull/new/master
+remote: 
+To github.com:PetrKosvanec/NetLogo_ArtikulaceBloky.git
+ * [new branch]      master -> master
+Branch 'master' set up to track remote branch 'master' from 'origin'.
+petr@petrs:/opt/NetLogo-6.2.2-64/app/models/Odevzdam$ 
+
+
