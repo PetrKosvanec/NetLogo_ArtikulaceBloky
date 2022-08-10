@@ -1,24 +1,33 @@
 ;; pouzil jsem model /opt/NetLogo-6.2.2-64/app/models/Code Examples/Network Import Example.nlogo
 turtles-own [node-id]
 
-;links-own [strength]
+globals [hrany maxradku]
 
-globals [hrany]
-
-to import-network
+to setup
   clear-all
   set-default-shape turtles "circle"
+  set hrany []
+  set maxradku p_radku
   import-matice
   layout-circle (sort turtles) (max-pxcor - 1)
-  ;import-links
   reset-ticks
-  ;show hrany
 end
 
-;; This procedure reads in a files that contains node-specific attributes
-;; including an unique identification number
+to-report p_radku
+  file-open "matice.txt"
+  let radku 0
+  while [ not file-at-end? ] [
+    ;; do not remove - the model hangs without this
+    let nepotrebne read-from-string (word "[" file-read-line "]")
+    set radku radku + 1
+  ]
+  file-close
+  show radku
+  report radku
+end
+
+;; This procedure reads in an adjacency matrix of undirected graph
 to import-matice
-  set hrany []
   ;; This opens the file, so we can use it.
   file-open "matice.txt"
   ;; Read in all the data in the file
@@ -104,12 +113,12 @@ ticks
 30.0
 
 BUTTON
-51
-134
-191
-167
+36
+45
+176
+78
 NIL
-import-network
+setup
 NIL
 1
 T
@@ -121,15 +130,15 @@ NIL
 1
 
 SLIDER
-14
-232
-200
-265
-zacnete_hranou
-zacnete_hranou
+15
+92
+201
+125
+zacni_radkem
+zacni_radkem
 0
-length hrany
-5.0
+maxradku
+1.0
 1
 1
 NIL
