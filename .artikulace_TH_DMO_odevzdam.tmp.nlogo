@@ -73,7 +73,7 @@ to push-onto-LIFO--nestromova
     ; vymazani dvou jednicek z datove struktury `hrany`
   ]
   show ZasbnkStckLIFO
-  ; foreach ZasbnkStckLIFO [ x -> show position (word stavajici-r) first x ] --> O 7 RADKU VYS za `or` ve stavajici-r PRVNI 1-KA; ZDE ZATIM BLBE
+  ; foreach ZasbnkStckLIFO [ x -> show position (word stavajici-r) first x ] --> O 7 RADKU VYS za `or` ve stavajici-r PRVNI 1KA
   ; foreach [["2(1,1)"] ["3(2,2)"]] [ x -> show position (word 2) first x ]
   ;   => 0
   ;   => 2
