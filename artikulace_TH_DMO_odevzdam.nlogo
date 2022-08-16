@@ -1,7 +1,7 @@
 ;; pouzil jsem model /opt/NetLogo-6.2.2-64/app/models/Code Examples/Network Import Example.nlogo
 turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
-globals [matice maxradku zasbnkStckLIFO start poradi hrana-z hrana-do]    ;; zasbnkStckLIFO - list of lists, contains elements as [b(1,1)] i.e.: [b(poradi,min)]
+globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany my-inner-list mylist]    ;; zasbnk-Stck-LIFO - list of lists, contains elements as [b(1,1)] i.e.: [b(poradi,min)]
                                            ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
 to setup
   clear-all
@@ -17,7 +17,7 @@ to setup
   build-datove-struktury
 end
 
-to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako maximum do slideru zacni-radkem
+to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maximum` do slideru zacni-radkem
   file-open "matice.txt"
   let radku 0
   while [ not file-at-end? ] [
@@ -53,8 +53,9 @@ to import-matice
 end
 
 to build-datove-struktury
-  set zasbnkStckLIFO []
-  ; set hrany []
+  set zasbnk-Stck-LIFO []
+  set hrany []
+  set vsechny-hrany []
   ; set artikulace []
   ; set bloky []
 end
@@ -65,14 +66,18 @@ to krok-vpred
   ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) )
   [
     set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
-    show "hrana-do:"
-    show hrana-do
-    push-onto-LIFO--nestromova             ;; BUD push-onto-LIFO NEBO nestromova-hrana
+    ;; zapisuje hranu do struktur `hrany` a `vsechny-hrany`
+    let hrana []
+    set hrana lput hrana-z hrana
+    set hrana lput hrana-do hrana
+    set hrany lput hrana hrany
+    set vsechny-hrany lput hrana vsechny-hrany
+    preskrtavam-v-matici             ;; BUD push-onto-LIFO NEBO nestromova-hrana
   ]
-  [ pop-from-LIFO ]
+  [ show "pop" ]
 end
 
-to push-onto-LIFO--nestromova
+to preskrtavam-v-matici
   ;; vynuluju dve jednicky ze struktury "matice"
   ;; prvni 1-ka:
   let temp-hrana-z replace-item hrana-do (item hrana-z matice) 0
@@ -82,35 +87,45 @@ to push-onto-LIFO--nestromova
   let temp-hrana-do replace-item hrana-z (item hrana-do matice) 0
   set temp-matice replace-item hrana-do matice  temp-hrana-do
   set matice temp-matice
+  tento-node-jiz-na-stacku
+end
 
-  ; set zasbnkStckLIFO lput itemOn2stack zasbnkStckLIFO
+to tento-node-jiz-na-stacku
+  ; set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
   let node-jiz-na-stacku false
 
-  let itemOn2stack []
-  ;; "je-tento-node-jiz-na-stacku?":
   ;; first first x - ze `4(1,1)` vytahne `4`
-  foreach zasbnkStckLIFO [ x -> if (position (word hrana-z) first first x ) = 0 [ set node-jiz-na-stacku true] ]
-  ;; foreach zasbnkStckLIFO [ x -> if (position (word hrana-z) first first x ) = 0 [show "BYLA 0, nula"] ]
+  ;; member? 2 [1 2 3]
+
+  ;; PRACUJU ZDE
+  ; node-jiz-na-stacku member? hrana-do position (word hrana-z) first first x ) = 0
+  ; if (empty? zasbnk-Stck-LIFO) or member? [ push ]
+  ; foreach zasbnk-Stck-LIFO [ x -> if (position (word hrana-z) first first x ) = 0 [ set node-jiz-na-stacku true] ]
+  ;; foreach zasbnk-Stck-LIFO [ x -> if (position (word hrana-z) first first x ) = 0 [show "BYLA 0, nula"] ]
   ;; za or hledam "nestromovou" hranu: first first x - ze `4(1,1)` vytahne `4`
-  if ( ( length zasbnkStckLIFO = 0 ) and (start = true) ) ;; or ( )        push-onto-LIFO case    PodTentoRadek dalsi if menici"start"
+  ; if ( ( length zasbnk-Stck-LIFO = 0 ) and (start = true) ) ;; or ( )        push-onto-LIFO case    PodTentoRadek dalsi if menici"start"
                                                                 ;;     nebo "start" vyhodim
-  [ ;; jednoduse preskrtnu dve 1-ky v "matice"
-
-    set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack       ;; pridavam node na stack - v tomto bloku
-    set zasbnkStckLIFO lput itemOn2stack zasbnkStckLIFO
-    set poradi poradi + 1
-    ; vymazani dvou jednicek z datove struktury `matice`
-  ]
-  show zasbnkStckLIFO
-  ; foreach zasbnkStckLIFO [ x -> show position (word hrana-z) first x ] --> O 7 RADKU VYS za `or` ve hrana-z PRVNI 1-KA; ZDE ZATIM BLBE
-  ; foreach [["2(1,1)"] ["3(2,2)"]] [ x -> show position (word 2) first x ]
-  ;   => 0
-  ;   => 2
+  ;; SEM VOLANI push NEBO pop
 end
-
-to pop-from-LIFO
-  show "programuj pop-from-LIFO"
-end
+;
+;to push        ;; JEN TAK JSEM TOTO SEM PLACNUL
+;  let itemOn2stack []
+;  [
+;    set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack       ;; pridavam node na stack - v tomto bloku
+;    set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
+;    set poradi poradi + 1
+;    ; vymazani dvou jednicek z datove struktury `matice`
+;  ]
+;  show zasbnk-Stck-LIFO
+;  ; foreach zasbnk-Stck-LIFO [ x -> show position (word hrana-z) first x ] --> O 7 RADKU VYS za `or` ve hrana-z PRVNI 1-KA; ZDE ZATIM BLBE
+;  ; foreach [["2(1,1)"] ["3(2,2)"]] [ x -> show position (word 2) first x ]
+;  ;   => 0
+;  ;   => 2
+;end
+;
+;to pop-from-LIFO
+;  show "programuj pop-from-LIFO"
+;end
 
 
 
