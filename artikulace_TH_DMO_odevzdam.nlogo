@@ -48,7 +48,6 @@ to import-matice
       ;; this removes the left-most element
       set radek (sublist radek 1 (length radek))
     ]
-    ; show radek
     ;; adding radek to the end of matice
     set matice lput radek matice
   ]
@@ -65,7 +64,8 @@ end
 
 to krok-vpred
   tick
-  ;; "position 1" vyhleda prvni pozici 1-ky; first vytahne z [[]] vnitrni []
+  ;; kod v kulate zavorce vrati cislo, nebo `false`; "position 1" vyhleda prvni pozici 1-ky; first vytahne vnitrni [] z [[]]
+  ;; vede ze stavajiciho nodu `hrana-z` dalsi neprozkoumana hrana? pokud ano, is-number? vrati `true`:
   ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) )
   [
     let hrana []
@@ -89,7 +89,6 @@ to krok-vpred
   ]
   [ show "pop" ]
   set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
-  ; print (word "There are " count turtles " turtles.")
   print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
 end
 
@@ -107,44 +106,28 @@ end
 
 to-report tento-node-jiz-na-stacku
   let jiz-na-stacku false
-
-  ; set hrana-z hrana-do  -->  nakopirovane do `ifelse empty?` a pod `ifelse empty?[]
-
   ifelse empty? zasbnk-Stck-LIFO
-  [
-    show "Tento node již na stacku:"
-    show hrana-do
-    show jiz-na-stacku
-    ; set hrana-z hrana-do
-    report jiz-na-stacku
-  ]
-  [
-    ;; read-from-string first first first zasbnk-Stck-LIFO        ;; ze [["1(2,2)"] ["2(3,3)"]] da: 1
-    ;; zjisti, jestli je `hrana-z` jiz na stacku
+  [report jiz-na-stacku]
+  [ ;; zjisti, jestli je `hrana-z` jiz na stacku
     foreach zasbnk-Stck-LIFO
-    [
-      x -> if (position (word hrana-do) first first x ) = 0
+    [ x -> if (position (word hrana-do) first first x ) = 0
       [
         set jiz-na-stacku true
-        show "Tento node již na stacku:"
-        show hrana-do
-        show jiz-na-stacku
-        ; set hrana-z hrana-do
         report jiz-na-stacku
       ]
     ]
   ]
-  show "Tento node již na stacku:"
-  show hrana-do
-  show jiz-na-stacku
-
   report jiz-na-stacku
 end
 
 ;; pridava node na stack
 to push
   let itemOn2stack []
-  set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack
+  set itemOn2stack lput hrana-z itemOn2stack   ; set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack
+  let tmp []
+  set tmp lput poradi tmp
+  set tmp lput poradi tmp
+  set itemOn2stack lput tmp itemOn2stack
   set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
 
   set poradi poradi + 1
@@ -152,8 +135,13 @@ end
 
 to nestromova
   ;; if ... [PREPIS MINIMA], NECO TAKOVEHO
+  show hrany
+  ;; item index list
+  ; item hrana-z zasbnk-Stck-LIFO
+  ; item hrana-do zasbnk-Stck-LIFO
 end
 
+;; read-from-string first first first zasbnk-Stck-LIFO        ;; ze [["1(2,2)"] ["2(3,3)"]] da: 1
 
 ;; This procedure reads in a file that contains all the links
 ;; The file is simply 3 columns separated by spaces.  In this
