@@ -119,7 +119,7 @@ to-report tento-node-jiz-na-stacku
         report jiz-na-stacku
       ]
     ]
-  ]
+
 
   ;; first first x - ze `4(1,1)` vytahne `4`
   ;; member? 2 [1 2 3]
