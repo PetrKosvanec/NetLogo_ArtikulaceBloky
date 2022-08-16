@@ -10,11 +10,14 @@ to setup
   set maxradku p_radku
   set start true
   set poradi 1
-  set hrana-z zacni-radkem
   import-matice
   layout-circle (sort turtles) (max-pxcor - 1)
   reset-ticks
   build-datove-struktury
+  set hrana-z zacni-radkem
+  set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
+  push
+  print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
 end
 
 to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maximum` do slideru zacni-radkem
@@ -45,7 +48,7 @@ to import-matice
       ;; this removes the left-most element
       set radek (sublist radek 1 (length radek))
     ]
-    show radek
+    ; show radek
     ;; adding radek to the end of matice
     set matice lput radek matice
   ]
@@ -54,7 +57,6 @@ end
 
 to build-datove-struktury
   set zasbnk-Stck-LIFO []
-  show zasbnk-Stck-LIFO
   set hrany []
   set vsechny-hrany []
   ; set artikulace []
@@ -66,22 +68,29 @@ to krok-vpred
   ;; "position 1" vyhleda prvni pozici 1-ky; first vytahne z [[]] vnitrni []
   ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) )
   [
-    set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
-    ;; zapisuje hranu do struktur `hrany` a `vsechny-hrany`
     let hrana []
     set hrana lput hrana-z hrana
     set hrana lput hrana-do hrana
+
+    ;; zapisuje hranu do struktur `hrany` a `vsechny-hrany`
     set hrany lput hrana hrany
     set vsechny-hrany lput hrana vsechny-hrany
-    preskrtavam-v-matici             ;; BUD push-onto-LIFO NEBO nestromova-hrana
-;    [ ifelse pxcor > 0
-;[ set pcolor blue ]
-;[ set pcolor red ] ]
-    ;let a false
-    ifelse tento-node-jiz-na-stacku [show "nestromova"] [push]
 
+    preskrtavam-v-matici
+    ifelse tento-node-jiz-na-stacku
+    [
+      show "nestromova"
+      nestromova
+    ]
+    [
+      set hrana-z hrana-do
+      push
+    ]
   ]
   [ show "pop" ]
+  set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
+  ; print (word "There are " count turtles " turtles.")
+  print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
 end
 
 to preskrtavam-v-matici
@@ -97,63 +106,53 @@ to preskrtavam-v-matici
 end
 
 to-report tento-node-jiz-na-stacku
-  ; set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
   let jiz-na-stacku false
+
+  ; set hrana-z hrana-do  -->  nakopirovane do `ifelse empty?` a pod `ifelse empty?[]
 
   ifelse empty? zasbnk-Stck-LIFO
   [
-    set jiz-na-stacku true
+    show "Tento node již na stacku:"
+    show hrana-do
+    show jiz-na-stacku
+    ; set hrana-z hrana-do
     report jiz-na-stacku
   ]
   [
-    ;; ze [["1(2,2)"] ["2(3,3)"]] potrebuju [1 2]
-    ; let tmp-l-nody-na-stacku []
-    ; let tmp-stack zasbnk-Stck-LIFO
     ;; read-from-string first first first zasbnk-Stck-LIFO        ;; ze [["1(2,2)"] ["2(3,3)"]] da: 1
+    ;; zjisti, jestli je `hrana-z` jiz na stacku
     foreach zasbnk-Stck-LIFO
     [
-      x -> if (position (word hrana-z) first first x ) = 0
+      x -> if (position (word hrana-do) first first x ) = 0
       [
-        show "BYLA 0, nula"
         set jiz-na-stacku true
+        show "Tento node již na stacku:"
+        show hrana-do
+        show jiz-na-stacku
+        ;set hrana-z hrana-do
         report jiz-na-stacku
       ]
     ]
-
-
-  ;; first first x - ze `4(1,1)` vytahne `4`
-  ;; member? 2 [1 2 3]
+  ]
+  show "Tento node již na stacku:"
+  show hrana-do
+  show jiz-na-stacku
 
   report jiz-na-stacku
-
-  ; node-jiz-na-stacku member? hrana-do position (word hrana-z) first first x ) = 0
-  ; if (empty? zasbnk-Stck-LIFO) or member? [ push ]
-  ; foreach zasbnk-Stck-LIFO [ x -> if (position (word hrana-z) first first x ) = 0 [ set node-jiz-na-stacku true] ]
-  ;; foreach zasbnk-Stck-LIFO [ x -> if (position (word hrana-z) first first x ) = 0 [show "BYLA 0, nula"] ]
-  ;; za or hledam "nestromovou" hranu: first first x - ze `4(1,1)` vytahne `4`
-  ; if ( ( length zasbnk-Stck-LIFO = 0 ) and (start = true) ) ;; or ( )        push-onto-LIFO case    PodTentoRadek dalsi if menici"start"
-                                                                ;;     nebo "start" vyhodim
-  ;; SEM VOLANI push NEBO pop
 end
 
-to push        ;; JEN TAK JSEM TOTO SEM PLACNUL
+;; pridava node na stack
+to push
   let itemOn2stack []
-  set poradi poradi + 1
-
-  set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack       ;; pridavam node na stack - v tomto bloku
+  set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack
   set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
 
-  show zasbnk-Stck-LIFO
-  ; foreach zasbnk-Stck-LIFO [ x -> show position (word hrana-z) first x ] --> O 7 RADKU VYS za `or` ve hrana-z PRVNI 1-KA; ZDE ZATIM BLBE
-  ; foreach [["2(1,1)"] ["3(2,2)"]] [ x -> show position (word 2) first x ]
-  ;   => 0
-  ;   => 2
+  set poradi poradi + 1
 end
-;
-;to pop-from-LIFO
-;  show "programuj pop-from-LIFO"
-;end
 
+to nestromova
+  ;; if ... [PREPIS MINIMA], NECO TAKOVEHO
+end
 
 
 ;; This procedure reads in a file that contains all the links
