@@ -3,6 +3,7 @@ turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
 globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany]    ;; zasbnk-Stck-LIFO - list of lists, contains elements as [b(1,1)] i.e.: [b(poradi,min)]
                                            ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
+;; OK
 to setup
   clear-all
   set-default-shape turtles "circle"
@@ -20,6 +21,7 @@ to setup
   print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
 end
 
+;; OK
 to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maximum` do slideru zacni-radkem
   file-open "matice.txt"
   let radku 0
@@ -32,6 +34,7 @@ to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maxi
   report radku
 end
 
+;; OK
 ;; This procedure reads in an adjacency matrix matice.txt of undirected graph
 to import-matice
   ;; This opens the file, so we can use it.
@@ -54,6 +57,7 @@ to import-matice
   file-close         ;; matice.txt je prepsana do `matice` a to je list listu tj. list radku
 end
 
+;; OK
 to build-datove-struktury
   set zasbnk-Stck-LIFO []
   set hrany []
@@ -62,8 +66,8 @@ to build-datove-struktury
   ; set bloky []
 end
 
+;; OK
 to krok-vpred
-  tick
   ;; kod v kulate zavorce vrati cislo, nebo `false`; "position 1" vyhleda prvni pozici 1-ky; first vytahne vnitrni [] z [[]]
   ;; vede ze stavajiciho nodu `hrana-z` dalsi neprozkoumana hrana? pokud ano, is-number? vrati `true`:
   ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) )
@@ -87,11 +91,13 @@ to krok-vpred
       push
     ]
   ]
-  [ show "pop" ]
+  [ pop ]                                                                         ;; [ show "pop" ]
   set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
   print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
+  tick
 end
 
+;; OK
 to preskrtavam-v-matici
   ;; vynuluju dve jednicky ze struktury "matice"
   ;; prvni 1-ka:
@@ -104,13 +110,15 @@ to preskrtavam-v-matici
   set matice temp-matice
 end
 
+;; OK
 to-report tento-node-jiz-na-stacku
   let jiz-na-stacku false
   ifelse empty? zasbnk-Stck-LIFO
   [report jiz-na-stacku]
   [ ;; zjisti, jestli je `hrana-z` jiz na stacku
     foreach zasbnk-Stck-LIFO
-    [ x -> if (position (word hrana-do) first first x ) = 0
+    ;; foreach zasbnk-Stck-LIFO [ x -> if (hrana-do = first x) [ show "NALEZENO" ] ]
+    [ x -> if (hrana-do = first x)
       [
         set jiz-na-stacku true
         report jiz-na-stacku
@@ -120,24 +128,53 @@ to-report tento-node-jiz-na-stacku
   report jiz-na-stacku
 end
 
+;; OK
 ;; pridava node na stack
 to push
   let itemOn2stack []
   set itemOn2stack lput hrana-z itemOn2stack   ; set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack
   let tmp []
   set tmp lput poradi tmp
-
+  set tmp lput poradi tmp
+  set itemOn2stack lput tmp itemOn2stack
   set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
-
   set poradi poradi + 1
 end
 
+;; dle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
 to nestromova
-  ;; if ... [PREPIS MINIMA], NECO TAKOVEHO
+  ;let i last last last zasbnk-Stck-LIFO
+  let i 0                                   ;; index nodu nestromova `hrana-do`
+  let temp-tuto-prip-p 0                   ;; temp-tuto-prip-prepsat, minim hodnotu
+  let temp-touto-prip-p 0                  ;; temp-touto-prip-prepsat
+
+  set temp-tuto-prip-p last last last zasbnk-Stck-LIFO
+  foreach zasbnk-Stck-LIFO
+  [ x -> ifelse (hrana-do = first x)
+    [                               ;; temp-tuto-prip-prepsat
+      set temp-touto-prip-p last last item i zasbnk-Stck-LIFO         ;; item i zasbnk-Stck-LIFO: [2 [2 2]]
+      ;; dle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
+      if temp-touto-prip-p < temp-tuto-prip-p
+      [
+        let itemOn2stack last zasbnk-Stck-LIFO                          ;; [3 [4 4]]
+        let temp-inner-l last itemOn2stack  ;; let temp-inner-l []
+        set temp-inner-l replace-item 1 temp-inner-l temp-touto-prip-p
+        print (word "temp-inner-l: " temp-inner-l)
+        set itemOn2stack remove-item 1 itemOn2stack
+        set itemOn2stack lput temp-inner-l itemOn2stack
+        show itemOn2stack
+        set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
+        set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
+      stop
+      ]
+    ]
+    [ set  j + 1 ]
+  ]
   show hrany
-  ;; item index list
-  ; item hrana-z zasbnk-Stck-LIFO
-  ; item hrana-do zasbnk-Stck-LIFO
+end
+
+to pop
+
 end
 
 ;; read-from-string first first first zasbnk-Stck-LIFO        ;; ze [["1(2,2)"] ["2(3,3)"]] da: 1
