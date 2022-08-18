@@ -206,12 +206,25 @@ to pop
       print (word "datová struktura `artikulace`: " artikulace)
       print (word "datová struktura `hrany` před vyhozením příslušných hran do bloku: " hrany)
       print (word "datová struktura `bloky` před přijetím příslušných hran do bloku: " bloky)
+
       ; NAPROGRAMUJU
-      let posledni-vrch lput first last zasbnk-Stck-LIFO ;; JSEM ZDE
+      let posledni-vrch first last zasbnk-Stck-LIFO ;; JSEM ZDE
       let hranu-vyhledam []
       set hranu-vyhledam lput posledni-vrch hranu-vyhledam
       set hranu-vyhledam lput vyhoz-vrch hranu-vyhledam
       print (word "hranu-vyhledam: " hranu-vyhledam)
+      print (word "(length hrany): " length hrany)
+      print (word "(length hrany) - 1: " (length hrany - 1))
+      let prehodim-vrcholy sublist hrany (position hranu-vyhledam hrany) (length hrany)
+      let blok []
+      ;; foreach zasbnk-Stck-LIFO [ x -> if (hrana-do = first x) [ show "NALEZENO" ] ]
+      foreach prehodim-vrcholy [
+        x -> set blok lput x blok
+        set hrany remove x hrany
+      ]
+
+      ; remove blok hrany;; let delka-bloku length blok
+      set bloky lput blok bloky
 
       print (word "datová struktura `hrany` po vyhození příslušných hran do bloku: " hrany)
       print (word "datová struktura `bloky` po přijetí příslušných hran do bloku: " bloky)
