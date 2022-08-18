@@ -1,9 +1,10 @@
 ;; pouzil jsem model /opt/NetLogo-6.2.2-64/app/models/Code Examples/Network Import Example.nlogo
 turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
-globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany]    ;; zasbnk-Stck-LIFO - list of lists, contains elements as [b(1,1)] i.e.: [b(poradi,min)]
-                                           ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
-;; OK
+;; zasbnk-Stck-LIFO - list of lists, contains elements as [1(1,1)] i.e.: [1(poradi,min)]
+globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany]
+;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
+
 to setup
   clear-all
   set-default-shape turtles "circle"
@@ -16,12 +17,11 @@ to setup
   reset-ticks
   build-datove-struktury
   set hrana-z zacni-radkem
-  set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
+  update-hrana-do
   push
   print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
 end
 
-;; OK
 to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maximum` do slideru zacni-radkem
   file-open "matice.txt"
   let radku 0
@@ -34,7 +34,6 @@ to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maxi
   report radku
 end
 
-;; OK
 ;; This procedure reads in an adjacency matrix matice.txt of undirected graph
 to import-matice
   ;; This opens the file, so we can use it.
@@ -57,7 +56,6 @@ to import-matice
   file-close         ;; matice.txt je prepsana do `matice` a to je list listu tj. list radku
 end
 
-;; OK
 to build-datove-struktury
   set zasbnk-Stck-LIFO []
   set hrany []
@@ -66,7 +64,6 @@ to build-datove-struktury
   ; set bloky []
 end
 
-;; OK
 to krok-vpred
   ;; kod v kulate zavorce vrati cislo, nebo `false`; "position 1" vyhleda prvni pozici 1-ky; first vytahne vnitrni [] z [[]]
   ;; vede ze stavajiciho nodu `hrana-z` dalsi neprozkoumana hrana? pokud ano, is-number? vrati `true`:
@@ -91,13 +88,12 @@ to krok-vpred
       push
     ]
   ]
-  [ pop ]                                                                         ;; [ show "pop" ]
-  set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
+  [pop]
+  update-hrana-do
   print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
   tick
 end
 
-;; OK
 to preskrtavam-v-matici
   ;; vynuluju dve jednicky ze struktury "matice"
   ;; prvni 1-ka:
@@ -110,7 +106,6 @@ to preskrtavam-v-matici
   set matice temp-matice
 end
 
-;; OK
 to-report tento-node-jiz-na-stacku
   let jiz-na-stacku false
   ifelse empty? zasbnk-Stck-LIFO
@@ -128,7 +123,10 @@ to-report tento-node-jiz-na-stacku
   report jiz-na-stacku
 end
 
-;; OK
+to update-hrana-do
+  set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
+end
+
 ;; pridava node na stack
 to push
   let itemOn2stack []
@@ -165,7 +163,7 @@ to nestromova
         show itemOn2stack
         set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
         set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
-      stop
+        stop
       ]
     ]
     [ set i i + 1 ]
@@ -174,6 +172,58 @@ to nestromova
 end
 
 to pop
+  let delka-zas-pred-pop length zasbnk-Stck-LIFO
+  ifelse delka-zas-pred-pop = 2
+  [ show "zjistim jestli je pocet hran ve strukture `vsechny-hrany` > 1?, atd."]
+  [
+    let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
+
+    ;; pop, tj vyhazuju ze stacku:
+    set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
+
+    set hrana-z first last zasbnk-Stck-LIFO;; o jednu pozici doleva v zasbnk-Stck-LIFO                  ;; [3 [4 4]]
+    update-hrana-do
+    print (word "po vyhozeni ze zasobniku, tj. po `pop`, jsme změnili hrana-z na: " hrana-z)
+
+    let min-stav-vrch last last last zasbnk-Stck-LIFO
+
+    ;; 3. je min-vrch > min-vyhoz-vrch? pokud ano, prepisu min-vrch
+    if min-stav-vrch > min-vyhoz-vrch [
+      print (word "min-stav-vrch před přepisem: " min-stav-vrch)
+      set min-stav-vrch min-vyhoz-vrch
+      print (word "min-stav-vrch po přepisu: " min-stav-vrch)
+    ]
+    ;;  4. je poradi-vrch <= min-vyhoz-vrch?
+    let poradi-stav-vrch (first last last zasbnk-Stck-LIFO)
+    print (word "poradi-stav-vrch: " poradi-stav-vrch)
+    ;; konec 4.
+    if poradi-stav-vrch <= min-vyhoz-vrch [
+      show "pokud ano,"
+      show "  a. stav-vrch do `artikulace` a b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky`"
+      show "       a vsechny tyto <> hrany vymazu z `hrany"
+    ]
+  ]
+
+
+
+
+  ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
+  ;; [ pokud ano,
+  ;;     zjistim jestli je pocet hran ve strukture `vsechny-hrany` > 1?
+  ;;       a. pokud ano, vlozim zbyvajici jediny vrch na stacku do `artikulace` a b. všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo>
+  ;;            v `hrany` do `bloky` a c. vymazu je z `hrany`
+  ;;       d. pokud ne, všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo> v `hrany` do `bloky` a c. vymazu je z `hrany`
+  ;; ]
+  ;; [ pokud ne,
+  ;;     1. ulozim minimum vrcholu stacku do min-vyhoz-vrch
+  ;;     2. pop stack
+  ;;     3. je min-vrch > min-vyhoz-vrch? pokud ano, prepisu min-vrch
+  ;;     4. je poradi-vrch <= min-vyhoz-vrch?
+  ;;          pokud ano,
+  ;;            a. vrch do `artikulace` a b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky` a
+  ;;                 vsechny tyty <> hrany vymazu z `hrany
+  ;;          pokud ne, nic
+  ;; ]
 
 end
 
