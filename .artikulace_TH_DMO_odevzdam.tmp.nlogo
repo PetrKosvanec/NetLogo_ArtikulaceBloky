@@ -176,7 +176,7 @@ to push
   set poradi poradi + 1
 end
 
-;; ERROR HERE  dle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
+;; dle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
 to nestromova
   ;let i last last last zasbnk-Stck-LIFO
   let i 0                                  ;; index nodu nestromova `hrana-do`
@@ -205,10 +205,6 @@ to nestromova
   ]
 end
 
-;to-report my-reporter
-;  report
-;end
-
 to pop
   let delka-zas-pred-pop length zasbnk-Stck-LIFO
   let vyhoz-vrch first last zasbnk-Stck-LIFO                                     ;; [3 [4 4]]
@@ -216,16 +212,20 @@ to pop
   [ show "zjistim jestli je pocet hran [hrana zacni-radkem*] ve strukture `vsechny-hrany` > 1?, atd."]
   [
     let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
+    print (word "min-vyhoz-vrch: " min-vyhoz-vrch)
 
     ;; pop, tj vyhazuju ze stacku:
     set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
     set hrana-z first last zasbnk-Stck-LIFO;; vyhazuju vrchol ze stacku, tedy posun hrana-z o jednu pozici doleva v zasbnk-Stck-LIFO
     update-hrana-do
     let min-stav-vrch last last last zasbnk-Stck-LIFO
+    print (word "min-stav-vrch: " min-stav-vrch)
 
     ;; pripadny prepis minima z min-vyhoz-vrch do min-stav-vrch
-    if min-stav-vrch > min-vyhoz-vrch [
+    if min-vyhoz-vrch < min-stav-vrch [
       set min-stav-vrch min-vyhoz-vrch
+      replace-item index list value
+      print (word "min-stav-vrch: " min-stav-vrch)
     ]
     let poradi-stav-vrch (first last last zasbnk-Stck-LIFO)
     ;;  podminka nalezeni artikulace; cut-vertex condition
@@ -244,7 +244,7 @@ to pop
       ]
       set bloky lput blok bloky
     ]
-    print (word "Konec procedury `pop`. poradi-stav-vrch: " poradi-stav-vrch " <= min-vyhoz-vrch min-vyhoz-vrch: " min-vyhoz-vrch)
+    print (word "Konec procedury `pop`. min-vyhoz-vrch: " min-vyhoz-vrch " < min-stav-vrch: " min-stav-vrch)
   ]
 
 
