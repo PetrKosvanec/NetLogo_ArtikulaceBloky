@@ -2,7 +2,7 @@
 turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
 ;; zasbnk-Stck-LIFO - list of lists, contains elements as [1(1,1)] i.e.: [1(poradi,min)]
-globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany]
+globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany artikulace bloky]
 ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
 
 to setup
@@ -60,8 +60,8 @@ to build-datove-struktury
   set zasbnk-Stck-LIFO []
   set hrany []
   set vsechny-hrany []
-  ; set artikulace []
-  ; set bloky []
+  set artikulace []
+  set bloky []
 end
 
 to krok-vpred
@@ -80,7 +80,6 @@ to krok-vpred
     preskrtavam-v-matici
     ifelse tento-node-jiz-na-stacku
     [
-      show "nestromova"
       nestromova
     ]
     [
@@ -157,10 +156,8 @@ to nestromova
         let itemOn2stack last zasbnk-Stck-LIFO                          ;; [3 [4 4]]
         let temp-inner-l last itemOn2stack  ;; let temp-inner-l []
         set temp-inner-l replace-item 1 temp-inner-l temp-touto-prip-p
-        print (word "temp-inner-l: " temp-inner-l)
         set itemOn2stack remove-item 1 itemOn2stack
         set itemOn2stack lput temp-inner-l itemOn2stack
-        show itemOn2stack
         set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
         set zasbnk-Stck-LIFO lput itemOn2stack zasbnk-Stck-LIFO
         stop
@@ -168,22 +165,29 @@ to nestromova
     ]
     [ set i i + 1 ]
   ]
-  show hrany
 end
+
+;to-report my-reporter
+;  report
+;end
 
 to pop
   let delka-zas-pred-pop length zasbnk-Stck-LIFO
+  let vyhoz-vrch first last zasbnk-Stck-LIFO                                     ;; [3 [4 4]]
+  print (word "vyhoz-vrch: " vyhoz-vrch)
+
   ifelse delka-zas-pred-pop = 2
-  [ show "zjistim jestli je pocet hran ve strukture `vsechny-hrany` > 1?, atd."]
+  [ show "zjistim jestli je pocet hran [hrana zacni-radkem*] ve strukture `vsechny-hrany` > 1?, atd."]
   [
     let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
 
     ;; pop, tj vyhazuju ze stacku:
     set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
 
-    set hrana-z first last zasbnk-Stck-LIFO;; o jednu pozici doleva v zasbnk-Stck-LIFO                  ;; [3 [4 4]]
-    update-hrana-do
+    set hrana-z first last zasbnk-Stck-LIFO;; o jednu pozici doleva v zasbnk-Stck-LIFO
     print (word "po vyhozeni ze zasobniku, tj. po `pop`, jsme změnili hrana-z na: " hrana-z)
+    update-hrana-do
+    print (word "po vyhozeni ze zasobniku, tj. po `pop`, jsme změnili hrana-do na: " hrana-do)
 
     let min-stav-vrch last last last zasbnk-Stck-LIFO
 
@@ -198,8 +202,21 @@ to pop
     print (word "poradi-stav-vrch: " poradi-stav-vrch)
     ;; konec 4.
     if poradi-stav-vrch <= min-vyhoz-vrch [
+      set artikulace lput first last zasbnk-Stck-LIFO artikulace
+      print (word "datová struktura `artikulace`: " artikulace)
+      print (word "datová struktura `hrany` před vyhozením příslušných hran do bloku: " hrany)
+      print (word "datová struktura `bloky` před přijetím příslušných hran do bloku: " bloky)
+      ; NAPROGRAMUJU
+      let posledni-vrch lput first last zasbnk-Stck-LIFO ;; JSEM ZDE
+      let hranu-vyhledam []
+      set hranu-vyhledam lput posledni-vrch hranu-vyhledam
+      set hranu-vyhledam lput vyhoz-vrch hranu-vyhledam
+      print (word "hranu-vyhledam: " hranu-vyhledam)
+
+      print (word "datová struktura `hrany` po vyhození příslušných hran do bloku: " hrany)
+      print (word "datová struktura `bloky` po přijetí příslušných hran do bloku: " bloky)
       show "pokud ano,"
-      show "  a. stav-vrch do `artikulace` a b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky`"
+      show "  b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky`"
       show "       a vsechny tyto <> hrany vymazu z `hrany"
     ]
   ]
