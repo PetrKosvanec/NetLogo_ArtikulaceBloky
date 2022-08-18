@@ -176,7 +176,7 @@ to push
   set poradi poradi + 1
 end
 
-;; Edle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
+;; ERROR HERE  dle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
 to nestromova
   ;let i last last last zasbnk-Stck-LIFO
   let i 0                                  ;; index nodu nestromova `hrana-do`
