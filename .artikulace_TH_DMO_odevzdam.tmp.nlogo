@@ -3,6 +3,10 @@
 ;; To the extent possible under law, Uri Wilensky has waived all
 ;; copyright and related or neighboring rights to the "Network Import Example" model.
 ;;--------------------------
+;; Bugy, prosím, reportujte na    . Please, report bugs to   kosvanec@gmail.com
+;; Svou matici pripravte podle vzoru jako soubor    . Like the one attached prepare your matrix as in    "matice.txt".
+;;   (Namísto mojí    . Instead of mine    "matice.txt".)
+;;--------------------------
 ;;
 ;; MIT License
 ;;
@@ -29,22 +33,24 @@
 ;; SOFTWARE.
 ;;---------------------------
 ;; Nalezeni artikulací a bloků ve spojitém prostém neorientovaném grafu, v němž hrany nemají váhy.
-;; Finding the cut vertices and blocks in a connected simple undirected graph, in which edges carry no weights. Tarjan
+;; Finding the cut vertices and blocks in a connected simple undirected graph, in which edges carry no weights.
+;;
+;; Robert Tarjan
 ;;   (1972 - year in which he defended his thesis) showed how this problem can be solved efficiently by means of depth-ﬁrst search.
-;;   As far as I know this algo does not carry his name (it carries nobody`s name). Prof. Tarjan has several other techniques named
-;;   after him. And was granted Turing Award.
+;;   As far as I know this algor. does not carry his name (it carries nobody`s name). Prof. Tarjan has several other techniques named
+;;   after him. And was granted Turing Award, i.a.
 
 turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
 ;; zasbnk-Stck-LIFO - list of lists, contains elements as [1(1,1)] i.e.: [1(poradi,min)]
-globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany artikulace bloky]
+globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany artikulace bloky vyhoz-vrch]
 ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
 
 to setup
   clear-all
   set-default-shape turtles "circle"
   set matice []
-  set maxradku p_radku
+  set maxradku p_radku - 1
   set start true
   set poradi 1
   import-matice
@@ -54,8 +60,10 @@ to setup
   set hrana-z zacni-radkem
   update-hrana-do
   push
+  print (word "hr.-z: příští hrana-z, next edge-from | hr.-do: příští hrana-do, next edge-to | poř.: pořadí příštího vrcholu na zásobník, order of next node onto stack")
+  print(word "H: hrany, edges | Z: zásobník, stack (také, also LIFO) | A: artikulace, cut-vertices | B: bloky, blocks")
+  print(word "---------------------------------------------------------------------------------------------------------------------------------------------")
   print (word "hr.-z: " hrana-z ", hr.-do: " hrana-do ", poř.: " poradi ", H: " hrany ", Z: " zasbnk-Stck-LIFO ", A: " artikulace ", B: " bloky  )
-  ; print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poř: " poradi ", H: " hrany ", Z: " zasbnk-Stck-LIFO ", A: " artikulace ", B: " bloky  )
 end
 
 to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maximum` do slideru zacni-radkem
@@ -115,9 +123,7 @@ to krok-vpred
 
     preskrtavam-v-matici
     ifelse tento-node-jiz-na-stacku
-    [
-      nestromova
-    ]
+    [nestromova]
     [
       set hrana-z hrana-do
       push
@@ -125,12 +131,11 @@ to krok-vpred
   ]
   [pop]
   update-hrana-do
-  print (word "hr.-z: " hrana-z ", hr.-do: " hrana-do ", poř.: " poradi ", H: " hrany ", Z: " zasbnk-Stck-LIFO ", A: " artikulace ", B: " bloky  )
-  ;;print (word "hrana-z: " hrana-z ", hrana-do: " hrana-do ", poradi: " poradi ", hrany: " hrany ", zasobnik: " zasbnk-Stck-LIFO)
+  print (word "hr.-z: " hrana-z ", hr.-do: " hrana-do ", poř.: " poradi ", H: " hrany ", Z: " zasbnk-Stck-LIFO ", A: " artikulace ", B: " bloky)
   tick
 end
 
-;; jednicku prepisu 0-ou, namisto preskrtnuti (namisto jednoducheho preskrtnuti stejne jako namisto dvojiteho)
+;; 1-ku prepisu 0-ou, namisto preskrtnuti (namisto jednoducheho preskrtnuti stejne jako namisto dvojiteho)
 to preskrtavam-v-matici
   ;; vynuluju dve jednicky ze struktury "matice"
   ;; prvni 1-ka:
@@ -149,7 +154,6 @@ to-report tento-node-jiz-na-stacku
   [report jiz-na-stacku]
   [ ;; zjisti, jestli je `hrana-z` jiz na stacku
     foreach zasbnk-Stck-LIFO
-    ;; foreach zasbnk-Stck-LIFO [ x -> if (hrana-do = first x) [ show "NALEZENO" ] ]
     [ x -> if (hrana-do = first x)
       [
         set jiz-na-stacku true
@@ -164,10 +168,10 @@ to update-hrana-do
   set hrana-do position 1 first sublist matice hrana-z (hrana-z + 1)
 end
 
-;; pridava node na stack
+;; pridava vrchol na stack
 to push
   let itemOn2stack []
-  set itemOn2stack lput hrana-z itemOn2stack   ; set itemOn2stack lput (word hrana-z "(" poradi "," poradi ")" )  itemOn2stack
+  set itemOn2stack lput hrana-z itemOn2stack
   let tmp []
   set tmp lput poradi tmp
   set tmp lput poradi tmp
@@ -176,9 +180,8 @@ to push
   set poradi poradi + 1
 end
 
-;; dle vysledku if... neprepise, nebo prepise minimum na vrcholu stacku
+;; dle vysledku ifelse prepise, nebo neprepise minimum na vrcholu stacku
 to nestromova
-  ;let i last last last zasbnk-Stck-LIFO
   let i 0                                  ;; index nodu nestromova `hrana-do`
   let temp-tuto-prip-p 0                   ;; temp-tuto-prip-prepsat, minim hodnotu
   let temp-touto-prip-p 0                  ;; temp-touto-prip-prepsat
@@ -205,49 +208,83 @@ to nestromova
   ]
 end
 
+;; vyhazuju ze stacku
 to pop
   let delka-zas-pred-pop length zasbnk-Stck-LIFO
-  let vyhoz-vrch first last zasbnk-Stck-LIFO                                     ;; [3 [4 4]]
+  set vyhoz-vrch first last zasbnk-Stck-LIFO                                     ;; [3 [4 4]]
   ifelse delka-zas-pred-pop = 2
-  [ show "zjistim jestli je pocet hran [hrana zacni-radkem*] ve strukture `vsechny-hrany` > 1?, atd."]
+  [ ;; ve vsechny-hrany, ktere matice ma, ...
+    let hledam first first vsechny-hrany
+    let n 0
+    foreach vsechny-hrany [
+      x -> if (first x = hledam) [ set n n + 1]
+    ]
+    ;; ... hledam jestli korenovy vrchol ma > 1 naslednika
+    ifelse n > 1 [                 ;; pokud ano - vznikne artikulace a blok
+      pridat-do-artikulace
+      pridat-do-bloky
+      ]
+    [pridat-do-bloky ]             ;; pokud ne - vznikne blok, nevznikne artikulace
+    ;; odstranim predposledni vrchol ze stacku, pak posledni
+    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
+    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
+    print(word "konec:")
+    stop
+  ]
   [
     let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
-    print (word "min-vyhoz-vrch: " min-vyhoz-vrch)
 
     ;; pop, tj vyhazuju ze stacku:
     set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
     set hrana-z first last zasbnk-Stck-LIFO;; vyhazuju vrchol ze stacku, tedy posun hrana-z o jednu pozici doleva v zasbnk-Stck-LIFO
     update-hrana-do
     let min-stav-vrch last last last zasbnk-Stck-LIFO
-    print (word "min-stav-vrch: " min-stav-vrch)
 
-    ;; pripadny prepis minima z min-vyhoz-vrch do min-stav-vrch
+    ;; pripadny prepis minima na vrch. stacku z min-vyhoz-vrch na min-stav-vrch
     if min-vyhoz-vrch < min-stav-vrch [
       set min-stav-vrch min-vyhoz-vrch
-      replace-item index list value
-      print (word "min-stav-vrch: " min-stav-vrch)
+      let stav-vrch-inner-l []
+      set stav-vrch-inner-l lput (first last last zasbnk-Stck-LIFO) stav-vrch-inner-l
+      set stav-vrch-inner-l lput min-vyhoz-vrch stav-vrch-inner-l
+      let posl-vrchol-stcku []
+      set posl-vrchol-stcku lput hrana-z posl-vrchol-stcku
+      set posl-vrchol-stcku lput stav-vrch-inner-l posl-vrchol-stcku
+      set zasbnk-Stck-LIFO replace-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO posl-vrchol-stcku    ;;  zde prepis min. na vrch. stacku
     ]
     let poradi-stav-vrch (first last last zasbnk-Stck-LIFO)
-    ;;  podminka nalezeni artikulace; cut-vertex condition
+    ;;  podminka nalezeni artikulace; cut-vertex found condition
     if poradi-stav-vrch <= min-vyhoz-vrch [
-      set artikulace lput first last zasbnk-Stck-LIFO artikulace
-
-      let posledni-vrch first last zasbnk-Stck-LIFO
-      let hranu-vyhledam []
-      set hranu-vyhledam lput posledni-vrch hranu-vyhledam
-      set hranu-vyhledam lput vyhoz-vrch hranu-vyhledam
-      let prehodim-vrcholy sublist hrany (position hranu-vyhledam hrany) (length hrany)
-      let blok []
-      foreach prehodim-vrcholy [
-        x -> set blok lput x blok
-        set hrany remove x hrany
-      ]
-      set bloky lput blok bloky
+      pridat-do-artikulace
+      pridat-do-bloky
     ]
-    print (word "Konec procedury `pop`. min-vyhoz-vrch: " min-vyhoz-vrch " < min-stav-vrch: " min-stav-vrch)
   ]
+end
 
+to pridat-do-artikulace
+  set artikulace lput first last zasbnk-Stck-LIFO artikulace
+end
 
+to pridat-do-bloky
+  let posledni-vrch 0          ;; NetLogo bug: pokud pod ifelse napisu let... a let..., je tento radek zbytecny, ale check semantiky by me stopnul
+  ifelse (length zasbnk-Stck-LIFO = 2) [
+    set posledni-vrch first first hrany ][
+    set posledni-vrch first last zasbnk-Stck-LIFO ]
+  let hranu-vyhledam []
+  set hranu-vyhledam lput posledni-vrch hranu-vyhledam
+  set hranu-vyhledam lput vyhoz-vrch hranu-vyhledam
+  let prehodim-vrcholy sublist hrany (position hranu-vyhledam hrany) (length hrany)
+  let blok []
+  foreach prehodim-vrcholy [
+    x -> set blok lput x blok
+    set hrany remove x hrany
+  ]
+  set bloky lput blok bloky
+end
+
+;; ZLEPSIT DO BUDOUCNA:
+;; bug pri "zacni-radkem" 6
+;; disablovat jedno nebo druhe tlacitko, podle postupu
+;; vystupy do graficke podoby, namisto v
 
 
   ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
@@ -268,7 +305,7 @@ to pop
   ;;          pokud ne, nic
   ;; ]
 
-end
+
 
 ;; read-from-string first first first zasbnk-Stck-LIFO        ;; ze [["1(2,2)"] ["2(3,3)"]] da: 1
 
@@ -354,17 +391,17 @@ zacni-radkem
 zacni-radkem
 0
 maxradku
-1.0
+6.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-55
-188
-163
-221
+52
+138
+160
+171
 krok vpřed
 krok-vpred
 NIL
@@ -375,6 +412,26 @@ NIL
 NIL
 NIL
 NIL
+1
+
+TEXTBOX
+657
+11
+1016
+41
+Počet puntíků reprezentuje počet vrcholů v    . Number of color dots represents number of nodes in    \"matice.txt\"
+12
+0.0
+1
+
+TEXTBOX
+687
+79
+1216
+194
+DOLE NALEZNETE \"Command Center\". MYŠÍ ZVYŠTE JEḦO VÝŠKU. VÝSTUPY NALEZNETE TAM. Klikněte na \"setup\", pak opakovaně na \"krok vpřed\".\n-------------------------------------------------------------------------\nBELOW FIND \"Command Center\". INCREASE ITS HEIGHT WITH MOUSE. OUTPUTS APPEAR THERE. Click \"setup\", then \"krok vpřed\" repeatedly.
+14
+0.0
 1
 
 @#$#@#$#@
