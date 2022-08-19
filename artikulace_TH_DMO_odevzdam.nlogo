@@ -60,7 +60,7 @@ to setup
   set hrana-z zacni-radkem
   update-hrana-do
   push
-  print (word "hr.-z: příští hrana-z, next edge-from | hr.-do: příští hrana-do, next edge-to | poř.: pořadí příštího vrcholu na zásobník, order of next node onto stack")
+  print (word "hr.-z: příští hrana-z, next edge-from | hr.-do: příští hrana-do, next edge-to | poř.: pořadí příštího vrcholu na zásobník, order of the next node onto stack")
   print(word "H: hrany, edges | Z: zásobník, stack (také, also LIFO) | A: artikulace, cut-vertices | B: bloky, blocks")
   print(word "---------------------------------------------------------------------------------------------------------------------------------------------")
   print (word "hr.-z: " hrana-z ", hr.-do: " hrana-do ", poř.: " poradi ", H: " hrany ", Z: " zasbnk-Stck-LIFO ", A: " artikulace ", B: " bloky  )
@@ -266,12 +266,17 @@ end
 
 to pridat-do-bloky
   let posledni-vrch 0          ;; NetLogo bug: pokud pod ifelse napisu let... a let..., je tento radek zbytecny, ale check semantiky by me stopnul
-  ifelse (length zasbnk-Stck-LIFO = 2) [
-    set posledni-vrch first first hrany ][
+  ;; !! Na `length zasbnk-Stck-LIFO = 2` se potrebuju odvolavat pred `but-last` v pop !!
+  ifelse (length zasbnk-Stck-LIFO = 2) [     ;; length zasbnk-Stck-LIFO = 2, JIŽ, ALE JÁ TU JEŠTĚ ŘEŠÍM PŘECHOD z length 3 na length 2 - to je nejspíš bug
+    set posledni-vrch first first hrany ][   ;;   při `zacni-radkem` 6 (length zasbnk-Stck-LIFO = 2 se zdá být situace
     set posledni-vrch first last zasbnk-Stck-LIFO ]
   let hranu-vyhledam []
   set hranu-vyhledam lput posledni-vrch hranu-vyhledam
   set hranu-vyhledam lput vyhoz-vrch hranu-vyhledam
+  print(word "sublist namisto cisla dostava `false`. hranu-vyhledam: " hranu-vyhledam ", hrany: " hrany ", stack: " zasbnk-Stck-LIFO)
+  ; let temp
+  ; if (1 = first last zasbnk-Stck-LIFO)
+  ; [stop]
   let prehodim-vrcholy sublist hrany (position hranu-vyhledam hrany) (length hrany)
   let blok []
   foreach prehodim-vrcholy [
@@ -283,8 +288,10 @@ end
 
 ;; PRILEZITOSTI KE ZLEPSENI:
 ;; bug pri "zacni-radkem" 6
-;; disablovat jedno nebo druhe tlacitko, podle postupu
+;; disablovat jedno nebo druhe tlacitko, podle postupu prográmkem
 ;; vystupy do graficke podoby, namisto v Command Center
+;; zkusit jak vypada graf - create links with - vymalovany Netlogem
+;; Netlogo ma nejake concurrent schopnosti, nekdy `krok vpřed` trvá, zkusit paralelismus
 
 
   ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
@@ -419,7 +426,7 @@ TEXTBOX
 11
 1016
 41
-Počet puntíků reprezentuje počet vrcholů v    . Number of color dots represents number of nodes in    \"matice.txt\"
+Počet puntíků reprezentuje počet vrcholů v    . Number of color dots represents number of nodes in    \"matice.txt\".
 12
 0.0
 1
@@ -429,7 +436,7 @@ TEXTBOX
 79
 1216
 194
-DOLE NALEZNETE \"Command Center\". MYŠÍ ZVYŠTE JEḦO VÝŠKU. VÝSTUPY NALEZNETE TAM. Klikněte na \"setup\", pak opakovaně na \"krok vpřed\".\n-------------------------------------------------------------------------\nBELOW FIND \"Command Center\". INCREASE ITS HEIGHT WITH MOUSE. OUTPUTS APPEAR THERE. Click \"setup\", then \"krok vpřed\" repeatedly.
+DOLE NALEZNETE \"Command Center\". MYŠÍ ZVYŠTE JEHO VÝŠKU. VÝSTUPY NALEZNETE TAM. Klikněte na \"setup\", pak opakovaně na \"krok vpřed\".\n-------------------------------------------------------------------------\nBELOW FIND \"Command Center\". INCREASE ITS HEIGHT WITH MOUSE. OUTPUTS APPEAR THERE. Click \"setup\", then \"krok vpřed\" repeatedly.
 14
 0.0
 1
