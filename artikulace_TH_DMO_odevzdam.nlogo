@@ -12,7 +12,6 @@
 ;;
 ;; Copyright (c) 2022 Petr Kosvanec
 ;;
-;; (Petr Košvanec in Czech)
 ;;
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +30,7 @@
 ;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
+;;
 ;;---------------------------
 ;; Nalezeni artikulací a bloků ve spojitém prostém neorientovaném grafu, v němž hrany nemají váhy.
 ;; Finding the cut vertices and blocks in a connected simple undirected graph, in which edges carry no weights.
@@ -79,7 +79,7 @@ end
 ;; This procedure reads in an adjacency matrix matice.txt of undirected graph
 to import-matice
   ;; This opens the file, so we can use it.
-  file-open "matice.txt"
+  file-open "matice2.txt"
   ;; Read in all the data in the file
   ;; data on the line is in this order:
   ;; node-id matice
@@ -131,12 +131,10 @@ to krok-vpred
     let pop-case (length zasbnk-Stck-LIFO)
      (ifelse
       pop-case = 1 [                                              ;; 1 vrchol na stacku
-        print(word "= 1 vrchol na stacku, zavolam pop-case-1")
         pop-case-1 ]
       pop-case = 2 [                                               ;; 2 vrcholy na stacku
-        print(word "= 2 vrcholy na stacku, zavolam pop-case-2")
         pop-case-2 ]
-      [ print(word "> 2 vrcholy na stacku, zavolam pop-case-3")    ;; default; > 2 vrcholy na stacku
+      [                                                            ;; default; > 2 vrcholy na stacku
         pop-case-3 ]
     )
   ]
@@ -147,7 +145,10 @@ to krok-vpred
     print (word "")
     print (word "konec, end")
     print (word "Artikulace: " artikulace)
-    print (word "Bloky: " first bloky ", " last bloky)
+    ;; foreach list command
+    ;; foreach list [ [args] -> commands ]
+    print (word "Bloky: ")
+    foreach bloky [ x -> print(word x) ]
   ]
   tick
 end
@@ -228,7 +229,7 @@ end
 to pop-case-1
   if length primi-ptmci-korene > 1 [
     pridat-do-artikulace ]
-  p-c-1-pridat-do-bloky
+  ; p-c-1-pridat-do-bloky
   set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
 end
 
@@ -297,36 +298,16 @@ to p-c-3-pridat-do-bloky
   let od-hrany-vc []
   set od-hrany-vc lput posledni-vrch od-hrany-vc      ;; pridavam levy prvek
   set od-hrany-vc lput vyhoz-vrch od-hrany-vc         ;; pridavam levy prvek
-  print(word "sublist namisto cisla dostava `false`. od-hrany-vc: " od-hrany-vc ", hrany: " hrany ", stack: " zasbnk-Stck-LIFO)
-  ; let temp
-  ; if (1 = first last zasbnk-Stck-LIFO)
-  ; [stop]
   set prehodim-vrcholy []
   set prehodim-vrcholy sublist hrany (position od-hrany-vc hrany) (length hrany)  ; SUBLIST expected input to be a number but got the TRUE/FALSE false instead.
   prehod-z-hrany-do-bloky
-  ; let blok []
-  ; foreach prehodim-vrcholy [
-  ;   x -> set blok lput x blok
-  ;   set hrany remove x hrany ]
-  ; set bloky lput blok bloky
-end
-
-to p-c-1-pridat-do-bloky
-  set primi-ptmci-korene reverse primi-ptmci-korene
-  foreach primi-ptmci-korene [
-    x -> set prehodim-vrcholy sublist hrany (position x hrany) (length hrany)
-    let blok []
-      foreach prehodim-vrcholy [
-        y -> set blok lput y blok
-        set hrany remove y hrany ]
-      set bloky lput blok bloky
-    ]
 end
 
 to p-c-2-pridat-do-bloky
   let od-hrany-vc position (last primi-ptmci-korene) hrany
   set prehodim-vrcholy []
-  set prehodim-vrcholy sublist hrany (position od-hrany-vc hrany) (length hrany)
+  print(word "od-hrany-vc: " od-hrany-vc " || position od-hrany-vc hrany: " (position od-hrany-vc hrany))
+  set prehodim-vrcholy sublist hrany od-hrany-vc (length hrany)
   prehod-z-hrany-do-bloky
 end
 
@@ -340,11 +321,21 @@ end
 
 
 ;; PRILEZITOSTI KE ZLEPSENI:
-;; bug pri "zacni-radkem" 6
-;; disablovat jedno nebo druhe tlacitko, podle postupu prográmkem
+
+;; matlarna:
+;; `od-hrany-vc` je v p-c-2 position/index, ale
+;;                  v p-c-3 list
+
+;; boiler-plate kod v procedurach pop-case-X a p-c-X-pridat-do-...
+
+;; disablovat jedno nebo druhe tlacitko, podle postupu programkem (kliknuti do cerneho tlacitka muze generovat runtime eror)
+
 ;; vystupy do graficke podoby, namisto v Command Center
-;; zkusit jak vypada graf - create links with - vymalovany Netlogem
-;; Netlogo ma nejake concurrent schopnosti, nekdy `krok vpřed` trvá, zkusit paralelismus
+
+;; zkusit jak vypada graf - create links with - vymalovany Netlogem mezi barev. puntiky
+
+;; Netlogo ma nejake concurrent schopnosti, nekdy `krok vpred` trva, zkusit paralelismus
+
 
     ;; (ifelse-value boolean1 [ reporter1 ] boolean2 [ reporter2 ] ... [ elsereporter ])
     ; ask patches [
@@ -357,76 +348,8 @@ end
     ; ]
 
 
-;; pop od 3. radku:
-;  ifelse length zasbnk-Stck-LIFO = 2
-;  [ ;; ve vsechny-hrany, ktere matice ma, ...
-;    let hledam first first vsechny-hrany
-;    let n 0
-;    foreach vsechny-hrany [
-;      x -> if (first x = hledam) [ set n n + 1]
-;    ]
-;    ;; ... hledam jestli korenovy vrchol ma > 1 naslednika
-;    ifelse n > 1 [                 ;; pokud ano - vznikne artikulace a blok
-;      pridat-do-artikulace
-;      pridat-do-bloky
-;      ]
-;    [pridat-do-bloky ]             ;; pokud ne - vznikne blok, nevznikne artikulace
-;    ;; odstranim predposledni vrchol ze stacku, pak posledni
-;    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
-;    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
-;    print(word "konec:")
-;    stop
-;  ]
-
-
-  ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
-  ;; Existuje z tohoto vrcholu / korene jeste neprozkoumana hrana?
-  ;;   [ pokud ano, pridej ji do stacku doprava a zpracuj ]
-  ;;   [ pokud ne, je (length zasbnk-Stck-LIFO = 1)?
-  ;;
-  ;;      [ pokud ano,
-  ;;           je pocet hran koren-* ve strukture `vsechny-hrany` > 1?
-  ;;             a. ulozim si takove hrany do `k-rozlamani-listu-hrany`
-  ;;             b. pokud ano, vlozim zbyvajici jediny vrch na stacku do `artikulace` a c. všechny hrany od <prvni, left-most hrany v `hrany`
-  ;;                  vcetne hran vpravo> v `hrany` do `bloky` a d. vymazu je z `hrany`
-  ;;             e. pokud ne, všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo> v `hrany` do `bloky` a c. vymazu je z `hrany`
-  ;;       ]
-  ;;       [ pokud ne,
-  ;;           1. ulozim minimum vrcholu stacku do min-vyhoz-vrch
-  ;;           2. pop stack
-  ;;           3. je min-vrch > min-vyhoz-vrch? pokud ano, prepisu min-vrch
-  ;;           4. je poradi-vrch <= min-vyhoz-vrch?
-  ;;                pokud ano,
-  ;;                  a. vrch do `artikulace` a b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky` a
-  ;;                       vsechny tyty <> hrany vymazu z `hrany
-  ;;                pokud ne, nic
-  ;;       ]
-
-
-  ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
-  ;;   Existuje z tohoto korene jeste neprozkoumana hrana?
-  ;;     [ pokud ano, pridej ji do stacku doprava a zpracuj ]
-  ;;
-  ;; [ pokud ano,
-  ;;     zjistim jestli je pocet hran ve strukture `vsechny-hrany` > 1?
-  ;;       a. pokud ano, vlozim zbyvajici jediny vrch na stacku do `artikulace` a b. všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo>
-  ;;            v `hrany` do `bloky` a c. vymazu je z `hrany`
-  ;;       d. pokud ne, všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo> v `hrany` do `bloky` a c. vymazu je z `hrany`
-  ;; ]
-  ;; [ pokud ne,
-  ;;     1. ulozim minimum vrcholu stacku do min-vyhoz-vrch
-  ;;     2. pop stack
-  ;;     3. je min-vrch > min-vyhoz-vrch? pokud ano, prepisu min-vrch
-  ;;     4. je poradi-vrch <= min-vyhoz-vrch?
-  ;;          pokud ano,
-  ;;            a. vrch do `artikulace` a b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky` a
-  ;;                 vsechny tyty <> hrany vymazu z `hrany
-  ;;          pokud ne, nic
-  ;; ]
-
-
-
-;; read-from-string first first first zasbnk-Stck-LIFO        ;; ze [["1(2,2)"] ["2(3,3)"]] da: 1
+;; Wilenskyho kod:
+;; (z Network Import Example.nlogo)
 
 ;; This procedure reads in a file that contains all the links
 ;; The file is simply 3 columns separated by spaces.  In this
@@ -510,7 +433,7 @@ zacni-radkem
 zacni-radkem
 0
 maxradku
-4.0
+0.0
 1
 1
 NIL
