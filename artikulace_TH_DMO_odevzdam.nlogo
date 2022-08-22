@@ -43,7 +43,7 @@
 turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
 ;; zasbnk-Stck-LIFO - list of lists, contains elements as [1(1,1)] i.e.: [1(poradi,min)]
-globals [matice maxradku zasbnk-Stck-LIFO poradi hrana-z hrana-do hrany vsechny-hrany artikulace bloky vyhoz-vrch primi-ptmci-korene prehodim-vrcholy]
+globals [matice maxradku zasbnk-Stck-LIFO poradi hrana-z hrana-do hrany artikulace bloky vyhoz-vrch primi-ptmci-korene prehodim-vrcholy]
 ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
 
 to setup
@@ -65,7 +65,7 @@ to setup
 end
 
 to-report p_radku      ;; reportuje pocet radku matice.txt - to uziju jako `maximum` do slideru zacni-radkem
-  file-open "matice.txt"
+  file-open "matice2.txt"
   let radku 0
   while [ not file-at-end? ] [
     ;; do not remove - the model hangs without this:
@@ -81,8 +81,6 @@ to import-matice
   ;; This opens the file, so we can use it.
   file-open "matice2.txt"
   ;; Read in all the data in the file
-  ;; data on the line is in this order:
-  ;; node-id matice
   while [not file-at-end?]
   [
     ;; this reads a single line into a radek list
@@ -101,7 +99,6 @@ end
 to build-datove-struktury
   set zasbnk-Stck-LIFO []
   set hrany []
-  set vsechny-hrany []
   set artikulace []
   set bloky []
   set matice []
@@ -117,10 +114,9 @@ to krok-vpred
     let hrana []
     set hrana lput hrana-z hrana
     set hrana lput hrana-do hrana
-    ;; zapisuje hranu do struktur `hrany` a `vsechny-hrany`
+    ;; zapisuje hranu do struktur `hrany`
     set hrany lput hrana hrany
-    set vsechny-hrany lput hrana vsechny-hrany
-    preskrtavam-v-matici
+    preskrtavam-v-matici                       ;; namisto preskrtnuti prepisuje kod 1-ku 0-ou
     ifelse tento-node-jiz-na-stacku
     [nestromova]
     [ set hrana-z hrana-do
@@ -134,8 +130,7 @@ to krok-vpred
         pop-case-1 ]
       pop-case = 2 [                                               ;; 2 vrcholy na stacku
         pop-case-2 ]
-      [                                                            ;; default; > 2 vrcholy na stacku
-        pop-case-3 ]
+      [ pop-case-3 ]                                               ;; default; > 2 vrcholy na stacku
     )
   ]
   update-hrana-do
@@ -226,6 +221,7 @@ to nestromova
   ]
 end
 
+;; vyhazuju ze stacku (pro vysku stacku 1)
 to pop-case-1
   if length primi-ptmci-korene > 1 [
     pridat-do-artikulace ]
@@ -233,30 +229,23 @@ to pop-case-1
   set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
 end
 
+;; vyhazuju ze stacku (pro vysku stacku 2)
 to pop-case-2
   let primy-potomek []
   set primy-potomek lput (first first zasbnk-Stck-LIFO) primy-potomek
   set primy-potomek lput (first last zasbnk-Stck-LIFO) primy-potomek
   set primi-ptmci-korene lput primy-potomek primi-ptmci-korene
-  print(word "Potrebuju zde updatovat hrana-z a hrana-do?")
   let temp hrana-z
   set hrana-z first first zasbnk-Stck-LIFO
-  print(word "is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) ): " is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1)))
-  print(word "position 1 first sublist matice hrana-z (hrana-z + 1) ): " ( position 1 first sublist matice hrana-z (hrana-z + 1)))
-  print(word "primi-ptmci-korene: " primi-ptmci-korene)
-  ; ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) ) [
-  ;  set zasbnk-Stck-LIFO but-last zasbnk-Stck-LIFO ][
-  ;  set zasbnk-Stck-LIFO but-last zasbnk-Stck-LIFO ]
   p-c-2-pridat-do-bloky
   set zasbnk-Stck-LIFO but-last zasbnk-Stck-LIFO
 end
 
-;; vyhazuju ze stacku
+;; vyhazuju ze stacku (pro vysku stacku > 2)
 to pop-case-3
   set vyhoz-vrch first last zasbnk-Stck-LIFO                                     ;; [3 [4 4]]
   let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
   let poradi-stav-vrch (first last last but-last zasbnk-Stck-LIFO)
-  print(word "Lze `pridat-do-artikulace` a `pridat do bloky`?   poradi-stav-vrch: " poradi-stav-vrch" <= min-vyhoz-vrch: " min-vyhoz-vrch "?")
   if poradi-stav-vrch <= min-vyhoz-vrch [
     pridat-do-artikulace
     p-c-3-pridat-do-bloky
@@ -290,23 +279,19 @@ to pridat-do-artikulace
 end
 
 to p-c-3-pridat-do-bloky
-  let posledni-vrch 0          ;; NetLogo bug: pokud pod ifelse napisu let... a let..., je tento radek zbytecny, ale check semantiky by me stopnul
-  ;; !! Na `length zasbnk-Stck-LIFO = 2` se potrebuju odvolavat pred `but-last` v pop !!
-  ;; ifelse (length zasbnk-Stck-LIFO = 2)       ;; length zasbnk-Stck-LIFO = 2, JIŽ, ALE JÁ TU JEŠTĚ ŘEŠÍM PŘECHOD z length 3 na length 2 - to je nejspíš bug
-  ;;  [ set posledni-vrch first first hrany ]  ;;   při `zacni-radkem` 6 (length zasbnk-Stck-LIFO = 2 se zdá být situace
+  let posledni-vrch 0          ;; NetLogo bug?: pokud pod ifelse napisu let... a let..., je tento radek zbytecny, ale check semantiky by me stopnul
   set posledni-vrch first last but-last zasbnk-Stck-LIFO
   let od-hrany-vc []
   set od-hrany-vc lput posledni-vrch od-hrany-vc      ;; pridavam levy prvek
   set od-hrany-vc lput vyhoz-vrch od-hrany-vc         ;; pridavam levy prvek
   set prehodim-vrcholy []
-  set prehodim-vrcholy sublist hrany (position od-hrany-vc hrany) (length hrany)  ; SUBLIST expected input to be a number but got the TRUE/FALSE false instead.
+  set prehodim-vrcholy sublist hrany (position od-hrany-vc hrany) (length hrany)
   prehod-z-hrany-do-bloky
 end
 
 to p-c-2-pridat-do-bloky
   let od-hrany-vc position (last primi-ptmci-korene) hrany
   set prehodim-vrcholy []
-  print(word "od-hrany-vc: " od-hrany-vc " || position od-hrany-vc hrany: " (position od-hrany-vc hrany))
   set prehodim-vrcholy sublist hrany od-hrany-vc (length hrany)
   prehod-z-hrany-do-bloky
 end
@@ -322,6 +307,8 @@ end
 
 ;; PRILEZITOSTI KE ZLEPSENI:
 
+;; mozny bug pri nacitani matice.txt do matice, nebo malfunction laptopu po 11 hod provozu
+
 ;; matlarna:
 ;; `od-hrany-vc` je v p-c-2 position/index, ale
 ;;                  v p-c-3 list
@@ -329,6 +316,8 @@ end
 ;; boiler-plate kod v procedurach pop-case-X a p-c-X-pridat-do-...
 
 ;; disablovat jedno nebo druhe tlacitko, podle postupu programkem (kliknuti do cerneho tlacitka muze generovat runtime eror)
+
+;; mene globalnich promennych, vice to-report
 
 ;; vystupy do graficke podoby, namisto v Command Center
 
@@ -433,7 +422,7 @@ zacni-radkem
 zacni-radkem
 0
 maxradku
-0.0
+4.0
 1
 1
 NIL
