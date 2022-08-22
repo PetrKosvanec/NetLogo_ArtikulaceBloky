@@ -43,20 +43,18 @@
 turtles-own [node-id]
                                            ;; matice contains adjacency matrix - following `setup`
 ;; zasbnk-Stck-LIFO - list of lists, contains elements as [1(1,1)] i.e.: [1(poradi,min)]
-globals [matice maxradku zasbnk-Stck-LIFO start poradi hrana-z hrana-do hrany vsechny-hrany artikulace bloky vyhoz-vrch]
+globals [matice maxradku zasbnk-Stck-LIFO poradi hrana-z hrana-do hrany vsechny-hrany artikulace bloky vyhoz-vrch primi-ptmci-korene prehodim-vrcholy]
 ;;      a is 0, b is 1, c is 2, etc. So [b(1,1)] is [1(1,1)] in my implementation
 
 to setup
   clear-all
   set-default-shape turtles "circle"
-  set matice []
+  build-datove-struktury
   set maxradku p_radku - 1
-  set start true
   set poradi 1
   import-matice
   layout-circle (sort turtles) (max-pxcor - 1)
   reset-ticks
-  build-datove-struktury
   set hrana-z zacni-radkem
   update-hrana-do
   push
@@ -106,30 +104,42 @@ to build-datove-struktury
   set vsechny-hrany []
   set artikulace []
   set bloky []
+  set matice []
+  set primi-ptmci-korene []
+  set prehodim-vrcholy []
 end
 
 to krok-vpred
   ;; kod v kulate zavorce vrati cislo, nebo `false`; "position 1" vyhleda prvni pozici 1-ky; first vytahne vnitrni [] z [[]]
   ;; vede ze stavajiciho nodu `hrana-z` dalsi neprozkoumana hrana? pokud ano, is-number? vrati `true`:
   ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) )
-  [                                       ;; true po `ifelse is-number?`
+  [                                  ;; true, po `ifelse is-number?`
     let hrana []
     set hrana lput hrana-z hrana
     set hrana lput hrana-do hrana
-
     ;; zapisuje hranu do struktur `hrany` a `vsechny-hrany`
     set hrany lput hrana hrany
     set vsechny-hrany lput hrana vsechny-hrany
-
     preskrtavam-v-matici
     ifelse tento-node-jiz-na-stacku
     [nestromova]
-    [
-      set hrana-z hrana-do
+    [ set hrana-z hrana-do
       push
     ]
   ]
-  [pop]                                   ;; false po `ifelse is-number?`
+  [                               ;; false, po `ifelse is-number?`
+    let pop-case (length zasbnk-Stck-LIFO)
+     (ifelse
+      pop-case = 1 [                                              ;; 1 vrchol na stacku
+        print(word "= 1 vrchol na stacku, zavolam pop-case-1")
+        pop-case-1 ]
+      pop-case = 2 [                                               ;; 2 vrcholy na stacku
+        print(word "= 2 vrcholy na stacku, zavolam pop-case-2")
+        pop-case-2 ]
+      [ print(word "> 2 vrcholy na stacku, zavolam pop-case-3")    ;; default; > 2 vrcholy na stacku
+        pop-case-3 ]
+    )
+  ]
   update-hrana-do
   print (word "hr.-z: " hrana-z ", hr.-do: " hrana-do ", poř.: " poradi ", H: " hrany ", Z: " zasbnk-Stck-LIFO ", A: " artikulace ", B: " bloky)
   if(length zasbnk-Stck-LIFO = 0)
@@ -215,96 +225,119 @@ to nestromova
   ]
 end
 
+to pop-case-1
+  if length primi-ptmci-korene > 1 [
+    pridat-do-artikulace ]
+  p-c-1-pridat-do-bloky
+  set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
+end
+
+to pop-case-2
+  let primy-potomek []
+  set primy-potomek lput (first first zasbnk-Stck-LIFO) primy-potomek
+  set primy-potomek lput (first last zasbnk-Stck-LIFO) primy-potomek
+  set primi-ptmci-korene lput primy-potomek primi-ptmci-korene
+  print(word "Potrebuju zde updatovat hrana-z a hrana-do?")
+  let temp hrana-z
+  set hrana-z first first zasbnk-Stck-LIFO
+  print(word "is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) ): " is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1)))
+  print(word "position 1 first sublist matice hrana-z (hrana-z + 1) ): " ( position 1 first sublist matice hrana-z (hrana-z + 1)))
+  print(word "primi-ptmci-korene: " primi-ptmci-korene)
+  ; ifelse is-number? ( position 1 first sublist matice hrana-z (hrana-z + 1) ) [
+  ;  set zasbnk-Stck-LIFO but-last zasbnk-Stck-LIFO ][
+  ;  set zasbnk-Stck-LIFO but-last zasbnk-Stck-LIFO ]
+  p-c-2-pridat-do-bloky
+  set zasbnk-Stck-LIFO but-last zasbnk-Stck-LIFO
+end
+
 ;; vyhazuju ze stacku
-to pop
-  ; let delka-zas-pred-pop length zasbnk-Stck-LIFO
-
+to pop-case-3
   set vyhoz-vrch first last zasbnk-Stck-LIFO                                     ;; [3 [4 4]]
-  ifelse length zasbnk-Stck-LIFO = 2
-  [ ;; ve vsechny-hrany, ktere matice ma, ...
-    let hledam first first vsechny-hrany
-    let n 0
-    foreach vsechny-hrany [
-      x -> if (first x = hledam) [ set n n + 1]
-    ]
-    ;; ... hledam jestli korenovy vrchol ma > 1 naslednika
-    ifelse n > 1 [                 ;; pokud ano - vznikne artikulace a blok
-      pridat-do-artikulace
-      pridat-do-bloky
-      ]
-    [pridat-do-bloky ]             ;; pokud ne - vznikne blok, nevznikne artikulace
-    ;; odstranim predposledni vrchol ze stacku, pak posledni
-    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
-    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
-    print(word "konec:")
-    stop
+  let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
+  let poradi-stav-vrch (first last last but-last zasbnk-Stck-LIFO)
+  print(word "Lze `pridat-do-artikulace` a `pridat do bloky`?   poradi-stav-vrch: " poradi-stav-vrch" <= min-vyhoz-vrch: " min-vyhoz-vrch "?")
+  if poradi-stav-vrch <= min-vyhoz-vrch [
+    pridat-do-artikulace
+    p-c-3-pridat-do-bloky
   ]
-  [
-    print (word "Jsem ve spodni vetvi ifelse: length zasbnk-Stck-LIFO: " length zasbnk-Stck-LIFO)
-    let min-vyhoz-vrch last last last zasbnk-Stck-LIFO
-    let poradi-stav-vrch (first last last but-last zasbnk-Stck-LIFO)
-    ; print(word "but-last zasbnk-Stck-LIFO: " but-last zasbnk-Stck-LIFO)
-    ; print(word "last but-last zasbnk-Stck-LIFO: " last but-last zasbnk-Stck-LIFO)
-    ; print(word "first last but-last zasbnk-Stck-LIFO: " first last but-last zasbnk-Stck-LIFO)
-    ;;  podminka nalezeni artikulace; cut-vertex found condition
-    print(word "Jde kod do `pridat-do-artikulace` a `pridat do bloky`?   poradi-stav-vrch: " poradi-stav-vrch" <= min-vyhoz-vrch: " min-vyhoz-vrch "?")
-    if poradi-stav-vrch <= min-vyhoz-vrch [
-      pridat-do-artikulace
-      pridat-do-bloky
-    ]
-
-
-    ;; BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE
-    ;; pop, tj vyhazuju ze stacku:
-    set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
-    set hrana-z first last zasbnk-Stck-LIFO;; vyhazuju vrchol ze stacku, tedy posun hrana-z o jednu pozici doleva v zasbnk-Stck-LIFO
-    update-hrana-do
-    let min-stav-vrch last last last zasbnk-Stck-LIFO
-
-    ;; pripadny prepis minima na vrch. stacku z min-vyhoz-vrch na min-stav-vrch
-    if min-vyhoz-vrch < min-stav-vrch [
-      set min-stav-vrch min-vyhoz-vrch
-      let stav-vrch-inner-l []
-      set stav-vrch-inner-l lput (first last last zasbnk-Stck-LIFO) stav-vrch-inner-l
-      set stav-vrch-inner-l lput min-vyhoz-vrch stav-vrch-inner-l
-      let posl-vrchol-stcku []
-      set posl-vrchol-stcku lput hrana-z posl-vrchol-stcku
-      set posl-vrchol-stcku lput stav-vrch-inner-l posl-vrchol-stcku
-      set zasbnk-Stck-LIFO replace-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO posl-vrchol-stcku    ;;  zde prepis min. na vrch. stacku
-    ]
+  ;; BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE-BUT-POP-JE-ZDE
+  ;; pop, tj vyhazuju ze stacku:
+  set zasbnk-Stck-LIFO (but-last zasbnk-Stck-LIFO)
+  set hrana-z first last zasbnk-Stck-LIFO;; vyhazuju vrchol ze stacku, tedy posun hrana-z o jednu pozici doleva v zasbnk-Stck-LIFO
+  update-hrana-do
+  let min-stav-vrch last last last zasbnk-Stck-LIFO
+  ;; pripadny prepis minima na vrch. stacku z min-vyhoz-vrch na min-stav-vrch
+  if min-vyhoz-vrch < min-stav-vrch [
+    set min-stav-vrch min-vyhoz-vrch
+    let stav-vrch-inner-l []
+    set stav-vrch-inner-l lput (first last last zasbnk-Stck-LIFO) stav-vrch-inner-l
+    set stav-vrch-inner-l lput min-vyhoz-vrch stav-vrch-inner-l
+    let posl-vrchol-stcku []
+    set posl-vrchol-stcku lput hrana-z posl-vrchol-stcku
+    set posl-vrchol-stcku lput stav-vrch-inner-l posl-vrchol-stcku
+    set zasbnk-Stck-LIFO replace-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO posl-vrchol-stcku    ;;  zde prepis min. na vrch. stacku
   ]
 end
 
 to pridat-do-artikulace
-  print(word "zasbnk-Stck-LIFO: " zasbnk-Stck-LIFO)
-  print(word "but-last zasbnk-Stck-LIFO: " but-last zasbnk-Stck-LIFO)
-  print(word "first but-last zasbnk-Stck-LIFO: " first but-last zasbnk-Stck-LIFO)
-  print(word "artikulace před: " artikulace)
-  set artikulace lput first last but-last zasbnk-Stck-LIFO artikulace
-  print(word "artikulace po: " artikulace)
+  let my-artikulace 0
+  ifelse (length zasbnk-Stck-LIFO = 1) [
+    set my-artikulace first last zasbnk-Stck-LIFO ][
+    set my-artikulace first last but-last zasbnk-Stck-LIFO ]
+  if not member? my-artikulace artikulace [
+    set artikulace lput my-artikulace artikulace ]
 end
 
-to pridat-do-bloky
+to p-c-3-pridat-do-bloky
   let posledni-vrch 0          ;; NetLogo bug: pokud pod ifelse napisu let... a let..., je tento radek zbytecny, ale check semantiky by me stopnul
   ;; !! Na `length zasbnk-Stck-LIFO = 2` se potrebuju odvolavat pred `but-last` v pop !!
   ;; ifelse (length zasbnk-Stck-LIFO = 2)       ;; length zasbnk-Stck-LIFO = 2, JIŽ, ALE JÁ TU JEŠTĚ ŘEŠÍM PŘECHOD z length 3 na length 2 - to je nejspíš bug
   ;;  [ set posledni-vrch first first hrany ]  ;;   při `zacni-radkem` 6 (length zasbnk-Stck-LIFO = 2 se zdá být situace
   set posledni-vrch first last but-last zasbnk-Stck-LIFO
-  let hranu-vyhledam []
-  set hranu-vyhledam lput posledni-vrch hranu-vyhledam      ;; pridavam levy prvek
-  set hranu-vyhledam lput vyhoz-vrch hranu-vyhledam         ;; pridavam levy prvek
-  print(word "sublist namisto cisla dostava `false`. hranu-vyhledam: " hranu-vyhledam ", hrany: " hrany ", stack: " zasbnk-Stck-LIFO)
+  let od-hrany-vc []
+  set od-hrany-vc lput posledni-vrch od-hrany-vc      ;; pridavam levy prvek
+  set od-hrany-vc lput vyhoz-vrch od-hrany-vc         ;; pridavam levy prvek
+  print(word "sublist namisto cisla dostava `false`. od-hrany-vc: " od-hrany-vc ", hrany: " hrany ", stack: " zasbnk-Stck-LIFO)
   ; let temp
   ; if (1 = first last zasbnk-Stck-LIFO)
   ; [stop]
-  let prehodim-vrcholy sublist hrany (position hranu-vyhledam hrany) (length hrany)
+  set prehodim-vrcholy []
+  set prehodim-vrcholy sublist hrany (position od-hrany-vc hrany) (length hrany)  ; SUBLIST expected input to be a number but got the TRUE/FALSE false instead.
+  prehod-z-hrany-do-bloky
+  ; let blok []
+  ; foreach prehodim-vrcholy [
+  ;   x -> set blok lput x blok
+  ;   set hrany remove x hrany ]
+  ; set bloky lput blok bloky
+end
+
+to p-c-1-pridat-do-bloky
+  set primi-ptmci-korene reverse primi-ptmci-korene
+  foreach primi-ptmci-korene [
+    x -> set prehodim-vrcholy sublist hrany (position x hrany) (length hrany)
+    let blok []
+      foreach prehodim-vrcholy [
+        y -> set blok lput y blok
+        set hrany remove y hrany ]
+      set bloky lput blok bloky
+    ]
+end
+
+to p-c-2-pridat-do-bloky
+  let od-hrany-vc position (last primi-ptmci-korene) hrany
+  set prehodim-vrcholy []
+  set prehodim-vrcholy sublist hrany (position od-hrany-vc hrany) (length hrany)
+  prehod-z-hrany-do-bloky
+end
+
+to prehod-z-hrany-do-bloky
   let blok []
   foreach prehodim-vrcholy [
     x -> set blok lput x blok
-    set hrany remove x hrany
-  ]
+    set hrany remove x hrany ]
   set bloky lput blok bloky
 end
+
 
 ;; PRILEZITOSTI KE ZLEPSENI:
 ;; bug pri "zacni-radkem" 6
@@ -313,8 +346,67 @@ end
 ;; zkusit jak vypada graf - create links with - vymalovany Netlogem
 ;; Netlogo ma nejake concurrent schopnosti, nekdy `krok vpřed` trvá, zkusit paralelismus
 
+    ;; (ifelse-value boolean1 [ reporter1 ] boolean2 [ reporter2 ] ... [ elsereporter ])
+    ; ask patches [
+    ;   let choice random 4
+    ;   set pcolor (ifelse-value
+    ;     choice = 0 [ red ]
+    ;     choice = 1 [ blue ]
+    ;     choice = 2 [ green ]
+    ;                [ yellow ])
+    ; ]
+
+
+;; pop od 3. radku:
+;  ifelse length zasbnk-Stck-LIFO = 2
+;  [ ;; ve vsechny-hrany, ktere matice ma, ...
+;    let hledam first first vsechny-hrany
+;    let n 0
+;    foreach vsechny-hrany [
+;      x -> if (first x = hledam) [ set n n + 1]
+;    ]
+;    ;; ... hledam jestli korenovy vrchol ma > 1 naslednika
+;    ifelse n > 1 [                 ;; pokud ano - vznikne artikulace a blok
+;      pridat-do-artikulace
+;      pridat-do-bloky
+;      ]
+;    [pridat-do-bloky ]             ;; pokud ne - vznikne blok, nevznikne artikulace
+;    ;; odstranim predposledni vrchol ze stacku, pak posledni
+;    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
+;    set zasbnk-Stck-LIFO remove-item (length zasbnk-Stck-LIFO - 1) zasbnk-Stck-LIFO
+;    print(word "konec:")
+;    stop
+;  ]
+
 
   ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
+  ;; Existuje z tohoto vrcholu / korene jeste neprozkoumana hrana?
+  ;;   [ pokud ano, pridej ji do stacku doprava a zpracuj ]
+  ;;   [ pokud ne, je (length zasbnk-Stck-LIFO = 1)?
+  ;;
+  ;;      [ pokud ano,
+  ;;           je pocet hran koren-* ve strukture `vsechny-hrany` > 1?
+  ;;             a. ulozim si takove hrany do `k-rozlamani-listu-hrany`
+  ;;             b. pokud ano, vlozim zbyvajici jediny vrch na stacku do `artikulace` a c. všechny hrany od <prvni, left-most hrany v `hrany`
+  ;;                  vcetne hran vpravo> v `hrany` do `bloky` a d. vymazu je z `hrany`
+  ;;             e. pokud ne, všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo> v `hrany` do `bloky` a c. vymazu je z `hrany`
+  ;;       ]
+  ;;       [ pokud ne,
+  ;;           1. ulozim minimum vrcholu stacku do min-vyhoz-vrch
+  ;;           2. pop stack
+  ;;           3. je min-vrch > min-vyhoz-vrch? pokud ano, prepisu min-vrch
+  ;;           4. je poradi-vrch <= min-vyhoz-vrch?
+  ;;                pokud ano,
+  ;;                  a. vrch do `artikulace` a b. všechny hrany od <hrany-obou-porovnavanych-vrcholu vcetne hran vpravo> v `hrany` do `bloky` a
+  ;;                       vsechny tyty <> hrany vymazu z `hrany
+  ;;                pokud ne, nic
+  ;;       ]
+
+
+  ;; meni se `length zasbnk-Stck-LIFO` ze 2 na 1?
+  ;;   Existuje z tohoto korene jeste neprozkoumana hrana?
+  ;;     [ pokud ano, pridej ji do stacku doprava a zpracuj ]
+  ;;
   ;; [ pokud ano,
   ;;     zjistim jestli je pocet hran ve strukture `vsechny-hrany` > 1?
   ;;       a. pokud ano, vlozim zbyvajici jediny vrch na stacku do `artikulace` a b. všechny hrany od <prvni, left-most hrany v `hrany` vcetne hran vpravo>
